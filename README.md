@@ -1,46 +1,147 @@
-# Getting Started with Create React App
+# 🏦 Retirement Calculator
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A comprehensive, modern retirement planning calculator built with React and TypeScript. This application helps users plan their retirement by calculating required savings, investment strategies, and providing detailed financial projections.
 
-## Available Scripts
+## ✨ Features
 
-In the project directory, you can run:
+### 📊 Core Functionality
+- **Retirement Planning**: Calculate required monthly savings to reach retirement goals
+- **Advanced Investment Modeling**: Support for multiple investment scenarios with different rates and time periods
+- **Inflation Adjustment**: Accounts for inflation in all calculations
+- **Pension Integration**: Includes expected pension benefits in retirement planning
+- **Dynamic Interest Rates**: Different rates for pre-retirement and post-retirement periods
 
-### `npm start`
+### 🎨 User Experience
+- **Multi-Section Form**: Organized into Basic Information, Financial Rates, and Advanced Settings
+- **Real-time Validation**: Instant feedback on form inputs with helpful error messages
+- **Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
+- **Animated Transitions**: Smooth animations powered by Framer Motion
+- **Data Persistence**: Form data is automatically saved to local storage
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+### 📈 Results & Visualization
+- **Comprehensive Dashboard**: Detailed breakdown of retirement calculations
+- **Interactive Charts**: Visual representation of savings growth over time
+- **Export Options**: Download results as PDF reports
+- **Multiple Scenarios**: Compare different investment strategies
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+### 🛠️ Technical Features
+- **TypeScript**: Full type safety and better development experience
+- **Modern React**: Built with React 19 and functional components
+- **Performance Optimized**: Efficient rendering and state management
+- **Accessibility**: WCAG compliant with proper ARIA labels
+- **Progressive Web App**: Can be installed and used offline
 
-### `npm test`
+## 🚀 Getting Started
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Prerequisites
+- Node.js (version 16 or higher)
+- npm or yarn package manager
 
-### `npm run build`
+### Installation
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/s-naveen/retirement-calc.git
+   cd retirement-calc
+   ```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+3. **Start the development server**
+   ```bash
+   npm start
+   ```
 
-### `npm run eject`
+4. **Open your browser**
+   Navigate to [http://localhost:4000](http://localhost:4000) to view the application
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+### Building for Production
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```bash
+npm run build
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+This creates an optimized production build in the `build` folder.
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+## 🎯 How to Use
 
-## Learn More
+### 1. Basic Information
+- **Current Age**: Your current age in years
+- **Retirement Age**: When you plan to retire
+- **Funds Required Until Age**: How long you need your retirement funds to last
+- **Current Savings**: Amount you have already saved
+- **Expected Monthly Pension**: Pension benefits you expect to receive
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### 2. Financial Rates
+- **Inflation Rate**: Expected annual inflation (default: 6.5%)
+- **Pre-Retirement Return Rate**: Expected annual return before retirement (default: 8%)
+- **Post-Retirement Return Rate**: Expected annual return after retirement (default: 7%)
+- **Investment Increment Rate**: Annual increase in your investment amount (default: 6.5%)
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### 3. Advanced Settings
+- **Multiple Investment Scenarios**: Add different investment plans with varying amounts, rates, and time periods
+- **Flexible Time Horizons**: Model investments with different maturity periods
+- **Custom Interest Rates**: Set specific returns for each investment
+
+## 📊 Calculation Methodology
+
+The calculator uses sophisticated financial modeling to provide accurate projections:
+
+- **Future Value Calculations**: Accounts for compound interest over time
+- **Inflation Adjustment**: All amounts are adjusted for purchasing power
+- **Present Value Analysis**: Determines required savings in today's dollars
+- **Multiple Investment Streams**: Handles complex investment portfolios
+- **Pension Integration**: Factors in expected pension benefits
+
+## 🛠️ Technical Stack
+
+- **Frontend Framework**: React 19
+- **Language**: TypeScript
+- **Styling**: CSS3 with custom properties
+- **Animations**: Framer Motion
+- **Icons**: Lucide React
+- **Charts**: Recharts
+- **PDF Generation**: jsPDF
+- **Testing**: Jest + React Testing Library
+- **Build Tool**: Create React App
+
+## 📱 Browser Support
+
+- Chrome (latest)
+- Firefox (latest)
+- Safari (latest)
+- Edge (latest)
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+
+### Development Setup
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Built with [Create React App](https://github.com/facebook/create-react-app)
+- Icons provided by [Lucide React](https://lucide.dev/)
+- Animations powered by [Framer Motion](https://www.framer.com/motion/)
+- Charts created with [Recharts](https://recharts.org/)
+
+## 📞 Contact
+
+For questions or support, please open an issue on GitHub.
+
+---
+
+**Happy Retirement Planning! 🎉**
