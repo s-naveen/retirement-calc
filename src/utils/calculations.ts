@@ -148,8 +148,8 @@ export const calculateRetirement = (data: RetirementData): CalculationResults =>
     inflationRate,
     interestRate,
     afterRetirementInterestRate,
-    incrementRate,
-    advancedInvestments
+    incrementRate
+    // Note: advancedInvestments feature to be implemented in future version
   } = data;
 
   const yearsForMonthlyInvestment = retirementAge - currentAge;
