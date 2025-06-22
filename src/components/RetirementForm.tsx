@@ -44,6 +44,7 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
   };
 
   const [formData, setFormData] = useState<RetirementData>(getInitialFormData());
+  const [inputValues, setInputValues] = useState<Record<string, string>>({});
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [activeSection, setActiveSection] = useState<'basic' | 'rates' | 'advanced'>('basic');
@@ -96,10 +97,60 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (field: keyof RetirementData, value: number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (field: keyof RetirementData, value: string) => {
+    // Store the raw string value for display
+    setInputValues(prev => ({ ...prev, [field]: value }));
+    
+    // Clear errors when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+    
+    // Only update formData if the value is a valid number or empty
+    if (value === '' || value === '-') {
+      // Don't update formData for empty/partial values - keep previous value
+      return;
+    }
+    
+    const numericValue = parseFloat(value);
+    if (!isNaN(numericValue)) {
+      setFormData(prev => ({ ...prev, [field]: numericValue }));
+    }
+  };
+
+  // Helper function to get display value for inputs
+  const getInputValue = (field: keyof RetirementData): string => {
+    // If we have a temporary input value, use that
+    if (inputValues[field] !== undefined) {
+      return inputValues[field];
+    }
+    // Otherwise, use the actual form data value
+    return String(formData[field] || '');
+  };
+
+  // Handle input blur to ensure we have valid values
+  const handleInputBlur = (field: keyof RetirementData) => {
+    const inputValue = inputValues[field];
+    if (inputValue === undefined) return;
+    
+    if (inputValue === '' || inputValue === '-') {
+      // Reset to previous valid value if empty
+      setInputValues(prev => ({ ...prev, [field]: String(formData[field] || 0) }));
+    } else {
+      const numericValue = parseFloat(inputValue);
+      if (isNaN(numericValue)) {
+        // Reset to previous valid value if invalid
+        setInputValues(prev => ({ ...prev, [field]: String(formData[field] || 0) }));
+      } else {
+        // Update form data with valid value
+        setFormData(prev => ({ ...prev, [field]: numericValue }));
+        // Clean up temporary input value
+        setInputValues(prev => {
+          const newValues = { ...prev };
+          delete newValues[field];
+          return newValues;
+        });
+      }
     }
   };
 
@@ -127,6 +178,65 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
         inv.id === id ? { ...inv, [field]: value } : inv
       )
     }));
+  };
+
+  // Helper functions for advanced investment inputs
+  const handleAdvancedInputChange = (id: string, field: keyof AdvancedInvestment, value: string) => {
+    const key = `${id}_${field}`;
+    // Store the raw string value for display
+    setInputValues(prev => ({ ...prev, [key]: value }));
+    
+    // Only update formData if the value is a valid number or empty
+    if (value === '' || value === '-') {
+      // Don't update formData for empty/partial values - keep previous value
+      return;
+    }
+    
+    const numericValue = parseFloat(value);
+    if (!isNaN(numericValue)) {
+      updateAdvancedInvestment(id, field, numericValue);
+    }
+  };
+
+  const getAdvancedInputValue = (id: string, field: keyof AdvancedInvestment): string => {
+    const key = `${id}_${field}`;
+    // If we have a temporary input value, use that
+    if (inputValues[key] !== undefined) {
+      return inputValues[key];
+    }
+    // Otherwise, get the actual value from form data
+    const investment = formData.advancedInvestments.find(inv => inv.id === id);
+    if (!investment) return '';
+    return String(investment[field] || '');
+  };
+
+  const handleAdvancedInputBlur = (id: string, field: keyof AdvancedInvestment) => {
+    const key = `${id}_${field}`;
+    const inputValue = inputValues[key];
+    if (inputValue === undefined) return;
+    
+    const investment = formData.advancedInvestments.find(inv => inv.id === id);
+    if (!investment) return;
+    
+    if (inputValue === '' || inputValue === '-') {
+      // Reset to previous valid value if empty
+      setInputValues(prev => ({ ...prev, [key]: String(investment[field] || 0) }));
+    } else {
+      const numericValue = parseFloat(inputValue);
+      if (isNaN(numericValue)) {
+        // Reset to previous valid value if invalid
+        setInputValues(prev => ({ ...prev, [key]: String(investment[field] || 0) }));
+      } else {
+        // Update form data with valid value
+        updateAdvancedInvestment(id, field, numericValue);
+        // Clean up temporary input value
+        setInputValues(prev => {
+          const newValues = { ...prev };
+          delete newValues[key];
+          return newValues;
+        });
+      }
+    }
   };
 
   const removeAdvancedInvestment = (id: string) => {
@@ -211,8 +321,9 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
                   <input
                     type="number"
                     id="currentAge"
-                    value={formData.currentAge}
-                    onChange={(e) => handleInputChange('currentAge', Number(e.target.value))}
+                    value={getInputValue('currentAge')}
+                    onChange={(e) => handleInputChange('currentAge', e.target.value)}
+                    onBlur={() => handleInputBlur('currentAge')}
                     max="100"
                     className={errors.currentAge ? 'error' : ''}
                   />
@@ -232,8 +343,9 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
                   <input
                     type="number"
                     id="retirementAge"
-                    value={formData.retirementAge}
-                    onChange={(e) => handleInputChange('retirementAge', Number(e.target.value))}
+                    value={getInputValue('retirementAge')}
+                    onChange={(e) => handleInputChange('retirementAge', e.target.value)}
+                    onBlur={() => handleInputBlur('retirementAge')}
                     min="30"
                     max="100"
                     className={errors.retirementAge ? 'error' : ''}
@@ -254,8 +366,9 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
                   <input
                     type="number"
                     id="fundsNeededTillAge"
-                    value={formData.fundsNeededTillAge}
-                    onChange={(e) => handleInputChange('fundsNeededTillAge', Number(e.target.value))}
+                    value={getInputValue('fundsNeededTillAge')}
+                    onChange={(e) => handleInputChange('fundsNeededTillAge', e.target.value)}
+                    onBlur={() => handleInputBlur('fundsNeededTillAge')}
                     min="50"
                     max="120"
                     className={errors.fundsNeededTillAge ? 'error' : ''}
@@ -277,8 +390,9 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
                   <input
                     type="number"
                     id="savingsTillNow"
-                    value={formData.savingsTillNow}
-                    onChange={(e) => handleInputChange('savingsTillNow', Number(e.target.value))}
+                    value={getInputValue('savingsTillNow')}
+                    onChange={(e) => handleInputChange('savingsTillNow', e.target.value)}
+                    onBlur={() => handleInputBlur('savingsTillNow')}
                     min="0"
                     className={errors.savingsTillNow ? 'error' : ''}
                   />
@@ -298,8 +412,9 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
                   <input
                     type="number"
                     id="expectedMonthlyPension"
-                    value={formData.expectedMonthlyPension}
-                    onChange={(e) => handleInputChange('expectedMonthlyPension', Number(e.target.value))}
+                    value={getInputValue('expectedMonthlyPension')}
+                    onChange={(e) => handleInputChange('expectedMonthlyPension', e.target.value)}
+                    onBlur={() => handleInputBlur('expectedMonthlyPension')}
                     min="0"
                     className={errors.expectedMonthlyPension ? 'error' : ''}
                   />
@@ -332,8 +447,9 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
                   <input
                     type="number"
                     id="inflationRate"
-                    value={formData.inflationRate}
-                    onChange={(e) => handleInputChange('inflationRate', Number(e.target.value))}
+                    value={getInputValue('inflationRate')}
+                    onChange={(e) => handleInputChange('inflationRate', e.target.value)}
+                    onBlur={() => handleInputBlur('inflationRate')}
                     min="0"
                     max="30"
                   />
@@ -352,8 +468,9 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
                   <input
                     type="number"
                     id="interestRate"
-                    value={formData.interestRate}
-                    onChange={(e) => handleInputChange('interestRate', Number(e.target.value))}
+                    value={getInputValue('interestRate')}
+                    onChange={(e) => handleInputChange('interestRate', e.target.value)}
+                    onBlur={() => handleInputBlur('interestRate')}
                     min="0"
                     max="30"
                   />
@@ -372,8 +489,9 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
                   <input
                     type="number"
                     id="afterRetirementInterestRate"
-                    value={formData.afterRetirementInterestRate}
-                    onChange={(e) => handleInputChange('afterRetirementInterestRate', Number(e.target.value))}
+                    value={getInputValue('afterRetirementInterestRate')}
+                    onChange={(e) => handleInputChange('afterRetirementInterestRate', e.target.value)}
+                    onBlur={() => handleInputBlur('afterRetirementInterestRate')}
                     min="0"
                     max="30"
                   />
@@ -392,8 +510,9 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
                   <input
                     type="number"
                     id="incrementRate"
-                    value={formData.incrementRate}
-                    onChange={(e) => handleInputChange('incrementRate', Number(e.target.value))}
+                    value={getInputValue('incrementRate')}
+                    onChange={(e) => handleInputChange('incrementRate', e.target.value)}
+                    onBlur={() => handleInputBlur('incrementRate')}
                     max="300"
                   />
                   <span className="input-suffix">%</span>
@@ -491,8 +610,9 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
                           <DollarSign size={18} className="input-icon" />
                           <input
                             type="number"
-                            value={investment.amount}
-                            onChange={(e) => updateAdvancedInvestment(investment.id, 'amount', Number(e.target.value))}
+                            value={getAdvancedInputValue(investment.id, 'amount')}
+                            onChange={(e) => handleAdvancedInputChange(investment.id, 'amount', e.target.value)}
+                            onBlur={() => handleAdvancedInputBlur(investment.id, 'amount')}
                             min="0"
                             placeholder="0"
                           />
@@ -509,8 +629,9 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
                         <div className="input-wrapper">
                           <input
                             type="number"
-                            value={investment.interestRate}
-                            onChange={(e) => updateAdvancedInvestment(investment.id, 'interestRate', Number(e.target.value))}
+                            value={getAdvancedInputValue(investment.id, 'interestRate')}
+                            onChange={(e) => handleAdvancedInputChange(investment.id, 'interestRate', e.target.value)}
+                            onBlur={() => handleAdvancedInputBlur(investment.id, 'interestRate')}
                             min="0"
                             max="30"
                             step="0.1"
@@ -532,8 +653,9 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
                         <div className="input-wrapper">
                           <input
                             type="number"
-                            value={investment.startYear}
-                            onChange={(e) => updateAdvancedInvestment(investment.id, 'startYear', Number(e.target.value))}
+                            value={getAdvancedInputValue(investment.id, 'startYear')}
+                            onChange={(e) => handleAdvancedInputChange(investment.id, 'startYear', e.target.value)}
+                            onBlur={() => handleAdvancedInputBlur(investment.id, 'startYear')}
                             min="0"
                             max={formData.retirementAge - formData.currentAge}
                             placeholder="0"
@@ -552,8 +674,9 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
                         <div className="input-wrapper">
                           <input
                             type="number"
-                            value={investment.timeYears}
-                            onChange={(e) => updateAdvancedInvestment(investment.id, 'timeYears', Number(e.target.value))}
+                            value={getAdvancedInputValue(investment.id, 'timeYears')}
+                            onChange={(e) => handleAdvancedInputChange(investment.id, 'timeYears', e.target.value)}
+                            onBlur={() => handleAdvancedInputBlur(investment.id, 'timeYears')}
                             min="1"
                             max="50"
                             placeholder="10"
