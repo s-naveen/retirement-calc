@@ -1,6 +1,7 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Retirement Calc",
+  "name": "Naveen S - Retirement Calculator",
+  "description": "Comprehensive retirement planning calculator by Naveen S that helps you plan your financial future with advanced features including inflation adjustment, pension integration, and investment scenario modeling.",
   "icons": [
     {
       "src": "favicon.ico",
@@ -10,16 +11,55 @@
     {
       "src": "logo192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
       "src": "logo512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
   "start_url": ".",
   "display": "standalone",
   "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "background_color": "#ffffff",
+  "orientation": "portrait-primary",
+  "categories": ["finance", "productivity", "utilities"],
+  "lang": "en",
+  "dir": "ltr",
+  "scope": "/",
+  "id": "retirement-calculator",
+  "prefer_related_applications": false,
+  "screenshots": [
+    {
+      "src": "screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Retirement Calculator Desktop View"
+    },
+    {
+      "src": "screenshot-narrow.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Retirement Calculator Mobile View"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Calculate Retirement",
+      "short_name": "Calculate",
+      "description": "Start retirement planning calculation",
+      "url": "/",
+      "icons": [
+        {
+          "src": "logo192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
 }

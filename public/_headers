@@ -1,0 +1,50 @@
+# Security and SEO headers for Cloudflare Pages
+
+/*
+  # Security headers
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+  
+  # Content Security Policy
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https:; frame-ancestors 'none';
+  
+  # Cache control for static assets
+  Cache-Control: public, max-age=31536000, immutable
+
+# HTML files
+/*.html
+  # SEO and performance headers
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Robots-Tag: index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1
+
+# Manifest and service worker
+/manifest.json
+  Content-Type: application/manifest+json
+  Cache-Control: public, max-age=604800
+
+# XML files (sitemap, robots)
+/*.xml
+  Content-Type: application/xml
+  Cache-Control: public, max-age=86400
+
+# Favicon files
+/favicon.ico
+  Cache-Control: public, max-age=31536000
+  Content-Type: image/x-icon
+
+/favicon.svg
+  Cache-Control: public, max-age=31536000
+  Content-Type: image/svg+xml
+
+# Apple touch icon
+/apple-touch-icon.png
+  Cache-Control: public, max-age=31536000
+  Content-Type: image/png
+
+# Social media images
+/og-image.png
+  Cache-Control: public, max-age=604800
+  Content-Type: image/png
