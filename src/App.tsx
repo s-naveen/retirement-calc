@@ -10,7 +10,12 @@ const App: React.FC = () => {
   const [activeStep, setActiveStep] = useState<'input' | 'results'>('input');
   const [retirementData, setRetirementData] = useState<RetirementData | null>(null);
   const [results, setResults] = useState<CalculationResults | null>(null);
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
+
+  // Initialize dark mode on mount
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }, []);
 
   // SEO: Update document title based on current step
   useEffect(() => {
