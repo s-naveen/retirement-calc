@@ -27,7 +27,8 @@ if ('serviceWorker' in navigator) {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                 // New content is available, prompt user to refresh
-                if (confirm('New version available! Click OK to update.')) {
+                // eslint-disable-next-line no-restricted-globals
+                if (window.confirm('New version available! Click OK to update.')) {
                   newWorker.postMessage({ type: 'SKIP_WAITING' });
                   window.location.reload();
                 }
