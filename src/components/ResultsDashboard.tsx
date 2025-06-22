@@ -169,11 +169,15 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, results, onRe
     remainingCorpus: withdrawal.remainingCorpus
   }));
 
+  // Calculate advanced investments total
+  const totalAdvancedInvestments = data.advancedInvestments.reduce((sum, inv) => sum + inv.amount, 0);
+  
   const summaryData = [
-    { name: 'Total Investment', value: results.totalInvestmentNeeded, color: '#4361ee' },
+    { name: 'Regular Investments', value: results.totalInvestmentNeeded, color: '#4361ee' },
+    { name: 'Advanced Investments', value: totalAdvancedInvestments, color: '#9333ea' },
     { name: 'Returns', value: results.totalReturns, color: '#2ec4b6' },
     { name: 'Current Savings', value: data.savingsTillNow, color: '#ff9f1c' }
-  ];
+  ].filter(item => item.value > 0); // Only show items with value > 0
 
   const keyMetrics = [
     {
@@ -461,6 +465,94 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, results, onRe
               {!showFullWithdrawalSchedule && results.monthlyWithdrawals.length > 10 && (
                 <p className="table-note">Showing first 10 years. Click "Show All" to see full schedule.</p>
               )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Advanced Investments Summary */}
+        {data.advancedInvestments.length > 0 && (
+          <motion.div
+            className="table-container"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 1.0 }}
+          >
+            <div className="table-header">
+              <h3>Advanced Investments Summary</h3>
+            </div>
+            <div className="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Investment</th>
+                    <th>Principal Amount</th>
+                    <th>Interest Rate</th>
+                    <th>Start Year</th>
+                    <th>Duration</th>
+                    <th>Growth Years</th>
+                    <th>Maturity Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.advancedInvestments.map((investment, index) => {
+                    const yearsToRetirement = data.retirementAge - data.currentAge;
+                    // Skip if investment starts after retirement
+                    if (investment.startYear >= yearsToRetirement) {
+                      return (
+                        <tr key={investment.id} style={{ opacity: 0.6 }}>
+                          <td>Investment {index + 1}</td>
+                          <td>{formatCurrency(investment.amount)}</td>
+                          <td>{investment.interestRate}%</td>
+                          <td>Year {investment.startYear}</td>
+                          <td>{investment.timeYears} years</td>
+                          <td>0 years (starts after retirement)</td>
+                          <td>{formatCurrency(0)}</td>
+                        </tr>
+                      );
+                    }
+
+                    // Calculate actual growth years
+                    const investmentEndYear = investment.startYear + investment.timeYears;
+                    const actualGrowthYears = Math.min(investmentEndYear, yearsToRetirement) - investment.startYear;
+                    const maturityValue = actualGrowthYears > 0
+                      ? investment.amount * Math.pow(1 + investment.interestRate / 100, actualGrowthYears)
+                      : investment.amount;
+                    
+                    return (
+                      <tr key={investment.id}>
+                        <td>Investment {index + 1}</td>
+                        <td>{formatCurrency(investment.amount)}</td>
+                        <td>{investment.interestRate}%</td>
+                        <td>Year {investment.startYear}</td>
+                        <td>{investment.timeYears} years</td>
+                        <td>{actualGrowthYears} years</td>
+                        <td>{formatCurrency(maturityValue)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr style={{ fontWeight: 'bold', borderTop: '2px solid var(--border-color)' }}>
+                    <td>Total</td>
+                    <td>{formatCurrency(totalAdvancedInvestments)}</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>{formatCurrency(data.advancedInvestments.reduce((sum, inv) => {
+                      const yearsToRetirement = data.retirementAge - data.currentAge;
+                      if (inv.startYear >= yearsToRetirement) return sum;
+                      
+                      const investmentEndYear = inv.startYear + inv.timeYears;
+                      const actualGrowthYears = Math.min(investmentEndYear, yearsToRetirement) - inv.startYear;
+                      
+                      return actualGrowthYears > 0
+                        ? sum + inv.amount * Math.pow(1 + inv.interestRate / 100, actualGrowthYears)
+                        : sum + inv.amount;
+                    }, 0))}</td>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
           </motion.div>
         )}

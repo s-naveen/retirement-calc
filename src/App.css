@@ -46,6 +46,25 @@
   box-sizing: border-box;
 }
 
+/* Global input styling - Remove step arrows from all number inputs */
+input[type="number"] {
+  -webkit-appearance: none;
+  -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Modern input styling */
+input {
+  font-family: inherit;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
 /* Screen Reader Only - SEO Accessibility */
 .sr-only {
   position: absolute;

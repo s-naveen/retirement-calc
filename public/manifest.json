@@ -4,9 +4,10 @@
   "description": "Comprehensive retirement planning calculator by Naveen S that helps you plan your financial future with advanced features including inflation adjustment, pension integration, and investment scenario modeling.",
   "icons": [
     {
-      "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "src": "favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
     },
     {
       "src": "logo192.png",

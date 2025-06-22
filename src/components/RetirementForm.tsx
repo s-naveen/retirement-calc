@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Calculator, Info, Plus, X, DollarSign, Percent, Calendar, TrendingUp } from 'lucide-react';
 import { RetirementData, AdvancedInvestment, CalculationResults, FormErrors } from '../types';
-import { calculateRetirement } from '../utils/calculations';
+import { calculateRetirement, formatCurrency } from '../utils/calculations';
 import './RetirementForm.css';
 
 interface RetirementFormProps {
@@ -15,7 +15,16 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
     const savedData = localStorage.getItem('retirementFormData');
     if (savedData) {
       try {
-        return JSON.parse(savedData);
+        const parsed = JSON.parse(savedData);
+        // Add backward compatibility for new addAtMaturity field
+        if (parsed.advancedInvestments) {
+          parsed.advancedInvestments = parsed.advancedInvestments.map((inv: any) => ({
+            ...inv,
+            name: inv.name || `Investment ${parsed.advancedInvestments.indexOf(inv) + 1}`,
+            addAtMaturity: inv.addAtMaturity !== undefined ? inv.addAtMaturity : true
+          }));
+        }
+        return parsed;
       } catch (error) {
         console.error('Error parsing saved form data:', error);
       }
@@ -63,6 +72,26 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
       newErrors.savingsTillNow = 'Current savings cannot be negative';
     }
 
+    // Validate advanced investments
+    const yearsToRetirement = formData.retirementAge - formData.currentAge;
+    formData.advancedInvestments.forEach((investment, index) => {
+      if (investment.amount <= 0) {
+        newErrors[`advancedInvestment_${index}_amount`] = `Investment ${index + 1}: Amount must be greater than 0`;
+      }
+      if (investment.interestRate < 0) {
+        newErrors[`advancedInvestment_${index}_rate`] = `Investment ${index + 1}: Interest rate cannot be negative`;
+      }
+      if (investment.startYear < 0) {
+        newErrors[`advancedInvestment_${index}_start`] = `Investment ${index + 1}: Start year cannot be negative`;
+      }
+      if (investment.startYear >= yearsToRetirement) {
+        newErrors[`advancedInvestment_${index}_start`] = `Investment ${index + 1}: Cannot start after retirement`;
+      }
+      if (investment.timeYears <= 0) {
+        newErrors[`advancedInvestment_${index}_duration`] = `Investment ${index + 1}: Duration must be greater than 0`;
+      }
+    });
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -75,11 +104,15 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
   };
 
   const addAdvancedInvestment = () => {
+    const investmentCount = formData.advancedInvestments.length + 1;
     const newInvestment: AdvancedInvestment = {
       id: Date.now().toString(),
+      name: `Investment ${investmentCount}`,
       amount: 100000,
       interestRate: 8,
-      timeYears: 1
+      startYear: 0, // Start immediately
+      timeYears: 1,
+      addAtMaturity: true // Default to maturity option
     };
     setFormData(prev => ({
       ...prev,
@@ -87,7 +120,7 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
     }));
   };
 
-  const updateAdvancedInvestment = (id: string, field: keyof AdvancedInvestment, value: number | string) => {
+  const updateAdvancedInvestment = (id: string, field: keyof AdvancedInvestment, value: number | string | boolean) => {
     setFormData(prev => ({
       ...prev,
       advancedInvestments: prev.advancedInvestments.map(inv =>
@@ -170,9 +203,8 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
               <div className="form-group">
                 <label htmlFor="currentAge">
                   Current Age
-                  <div className="tooltip">
+                  <div className="tooltip" data-tooltip="Your current age in years">
                     <Info size={16} />
-                    <span className="tooltip-text">Your current age in years</span>
                   </div>
                 </label>
                 <div className="input-wrapper">
@@ -192,9 +224,8 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
               <div className="form-group">
                 <label htmlFor="retirementAge">
                   Retirement Age
-                  <div className="tooltip">
+                  <div className="tooltip" data-tooltip="Age when you plan to retire">
                     <Info size={16} />
-                    <span className="tooltip-text">Age when you plan to retire</span>
                   </div>
                 </label>
                 <div className="input-wrapper">
@@ -215,9 +246,8 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
               <div className="form-group">
                 <label htmlFor="fundsNeededTillAge">
                   Funds Required Until Age
-                  <div className="tooltip">
+                  <div className="tooltip" data-tooltip="Age until which you need retirement funds">
                     <Info size={16} />
-                    <span className="tooltip-text">Age until which you need retirement funds</span>
                   </div>
                 </label>
                 <div className="input-wrapper">
@@ -238,9 +268,8 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
               <div className="form-group">
                 <label htmlFor="savingsTillNow">
                   Current Savings
-                  <div className="tooltip">
+                  <div className="tooltip" data-tooltip="Total amount you have saved so far">
                     <Info size={16} />
-                    <span className="tooltip-text">Total amount you have saved so far</span>
                   </div>
                 </label>
                 <div className="input-wrapper">
@@ -260,9 +289,8 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
               <div className="form-group">
                 <label htmlFor="expectedMonthlyPension">
                   Expected Monthly Pension
-                  <div className="tooltip">
+                  <div className="tooltip" data-tooltip="Monthly pension you expect after retirement (in today's value)">
                     <Info size={16} />
-                    <span className="tooltip-text">Monthly pension you expect after retirement (in today's value)</span>
                   </div>
                 </label>
                 <div className="input-wrapper">
@@ -296,9 +324,8 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
               <div className="form-group">
                 <label htmlFor="inflationRate">
                   Inflation Rate
-                  <div className="tooltip">
+                  <div className="tooltip" data-tooltip="Expected average annual inflation rate">
                     <Info size={16} />
-                    <span className="tooltip-text">Expected average annual inflation rate</span>
                   </div>
                 </label>
                 <div className="input-wrapper">
@@ -317,9 +344,8 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
               <div className="form-group">
                 <label htmlFor="interestRate">
                   Pre-Retirement Return Rate
-                  <div className="tooltip">
+                  <div className="tooltip" data-tooltip="Expected annual return before retirement">
                     <Info size={16} />
-                    <span className="tooltip-text">Expected annual return before retirement</span>
                   </div>
                 </label>
                 <div className="input-wrapper">
@@ -338,9 +364,8 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
               <div className="form-group">
                 <label htmlFor="afterRetirementInterestRate">
                   Post-Retirement Return Rate
-                  <div className="tooltip">
+                  <div className="tooltip" data-tooltip="Expected annual return after retirement">
                     <Info size={16} />
-                    <span className="tooltip-text">Expected annual return after retirement</span>
                   </div>
                 </label>
                 <div className="input-wrapper">
@@ -359,9 +384,8 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
               <div className="form-group">
                 <label htmlFor="incrementRate">
                   Investment Increment Rate
-                  <div className="tooltip">
+                  <div className="tooltip" data-tooltip="Annual increase in your investment amount">
                     <Info size={16} />
-                    <span className="tooltip-text">Annual increase in your investment amount</span>
                   </div>
                 </label>
                 <div className="input-wrapper">
@@ -387,81 +411,195 @@ const RetirementForm: React.FC<RetirementFormProps> = ({ onCalculationComplete }
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <h3><TrendingUp size={24} /> Advanced Investments</h3>
+            <div className="section-header">
+              <div className="section-title">
+                <TrendingUp size={24} />
+                <h3>Advanced Investments</h3>
+              </div>
+              <p className="section-description">
+                Add special investments with custom returns and timelines to boost your retirement corpus
+              </p>
+            </div>
             
             <div className="advanced-investments">
               {formData.advancedInvestments.map((investment, index) => (
-                <motion.div 
+                <motion.div
                   key={investment.id}
-                  className="investment-item"
+                  className="investment-card"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                 >
                   <div className="investment-header">
-                    <h4>Investment {index + 1}</h4>
+                    <div className="investment-title">
+                      <div className="investment-badge">#{index + 1}</div>
+                      <div className="investment-name-section">
+                        <input
+                          type="text"
+                          value={investment.name}
+                          onChange={(e) => updateAdvancedInvestment(investment.id, 'name', e.target.value)}
+                          className="investment-name-input"
+                          placeholder={`Investment ${index + 1}`}
+                          maxLength={30}
+                        />
+                      </div>
+                    </div>
                     <button
                       type="button"
                       className="remove-btn"
                       onClick={() => removeAdvancedInvestment(investment.id)}
+                      title="Remove Investment"
                     >
-                      <X size={16} />
+                      <X size={18} />
                     </button>
+                  </div>
+
+                  {/* Investment Type Toggle */}
+                  <div className="investment-type-section">
+                    <div className="form-group">
+                      <label className="toggle-label">
+                        <input
+                          type="checkbox"
+                          checked={investment.addAtMaturity}
+                          onChange={(e) => updateAdvancedInvestment(investment.id, 'addAtMaturity', e.target.checked)}
+                          className="toggle-checkbox"
+                        />
+                        <span className="toggle-slider"></span>
+                        <div className="toggle-content">
+                          <span className="toggle-title">Add at Maturity</span>
+                          <span className="toggle-description">
+                            {investment.addAtMaturity
+                              ? "Full maturity amount will be added when investment completes"
+                              : "Investment grows gradually year by year in your corpus"
+                            }
+                          </span>
+                        </div>
+                      </label>
+                    </div>
                   </div>
                   
                   <div className="investment-fields">
-                    <div className="form-group">
-                      <label>Amount</label>
-                      <div className="input-wrapper">
-                        <DollarSign size={16} className="input-icon" />
-                        <input
-                          type="number"
-                          value={investment.amount}
-                          onChange={(e) => updateAdvancedInvestment(investment.id, 'amount', Number(e.target.value))}
-                          min="0"
-                        />
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>
+                          Investment Amount
+                          <div className="tooltip" data-tooltip="Principal amount to invest">
+                            <Info size={16} />
+                          </div>
+                        </label>
+                        <div className="input-wrapper">
+                          <DollarSign size={18} className="input-icon" />
+                          <input
+                            type="number"
+                            value={investment.amount}
+                            onChange={(e) => updateAdvancedInvestment(investment.id, 'amount', Number(e.target.value))}
+                            min="0"
+                            placeholder="0"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="form-group">
+                        <label>
+                          Annual Return
+                          <div className="tooltip" data-tooltip="Expected annual return rate">
+                            <Info size={16} />
+                          </div>
+                        </label>
+                        <div className="input-wrapper">
+                          <input
+                            type="number"
+                            value={investment.interestRate}
+                            onChange={(e) => updateAdvancedInvestment(investment.id, 'interestRate', Number(e.target.value))}
+                            min="0"
+                            max="30"
+                            step="0.1"
+                            placeholder="8.0"
+                          />
+                          <span className="input-suffix">%</span>
+                        </div>
                       </div>
                     </div>
                     
-                    <div className="form-group">
-                      <label>Interest Rate</label>
-                      <div className="input-wrapper">
-                        <input
-                          type="number"
-                          value={investment.interestRate}
-                          onChange={(e) => updateAdvancedInvestment(investment.id, 'interestRate', Number(e.target.value))}
-                          min="0"
-                          max="30"
-                        />
-                        <span className="input-suffix">%</span>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>
+                          Start Year
+                          <div className="tooltip" data-tooltip="Years from now when investment begins (0 = start immediately)">
+                            <Info size={16} />
+                          </div>
+                        </label>
+                        <div className="input-wrapper">
+                          <input
+                            type="number"
+                            value={investment.startYear}
+                            onChange={(e) => updateAdvancedInvestment(investment.id, 'startYear', Number(e.target.value))}
+                            min="0"
+                            max={formData.retirementAge - formData.currentAge}
+                            placeholder="0"
+                          />
+                          <span className="input-suffix">years</span>
+                        </div>
+                      </div>
+                      
+                      <div className="form-group">
+                        <label>
+                          Duration
+                          <div className="tooltip" data-tooltip="Investment tenure in years">
+                            <Info size={16} />
+                          </div>
+                        </label>
+                        <div className="input-wrapper">
+                          <input
+                            type="number"
+                            value={investment.timeYears}
+                            onChange={(e) => updateAdvancedInvestment(investment.id, 'timeYears', Number(e.target.value))}
+                            min="1"
+                            max="50"
+                            placeholder="10"
+                          />
+                          <span className="input-suffix">years</span>
+                        </div>
                       </div>
                     </div>
-                    
-                    <div className="form-group">
-                      <label>Time Period</label>
-                      <div className="input-wrapper">
-                        <input
-                          type="number"
-                          value={investment.timeYears}
-                          onChange={(e) => updateAdvancedInvestment(investment.id, 'timeYears', Number(e.target.value))}
-                          min="1"
-                          max="50"
-                        />
-                        <span className="input-suffix">years</span>
+
+                    {/* Investment Preview */}
+                    <div className="investment-preview">
+                      <div className="preview-item">
+                        <span className="preview-label">Maturity Value:</span>
+                        <span className="preview-value">
+                          {formatCurrency(investment.amount * Math.pow(1 + investment.interestRate / 100, investment.timeYears))}
+                        </span>
+                      </div>
+                      <div className="preview-item">
+                        <span className="preview-label">Maturity Age:</span>
+                        <span className="preview-value">
+                          {formData.currentAge + investment.startYear + investment.timeYears} years
+                        </span>
                       </div>
                     </div>
                   </div>
                 </motion.div>
               ))}
               
-              <button
+              {formData.advancedInvestments.length === 0 && (
+                <div className="empty-state">
+                  <TrendingUp size={48} className="empty-icon" />
+                  <h4>No Advanced Investments</h4>
+                  <p>Add special investments to supercharge your retirement planning</p>
+                </div>
+              )}
+
+              <motion.button
                 type="button"
                 className="add-investment-btn"
                 onClick={addAdvancedInvestment}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
                 <Plus size={20} />
-                Add Investment
-              </button>
+                Add New Investment
+              </motion.button>
             </div>
           </motion.div>
         )}

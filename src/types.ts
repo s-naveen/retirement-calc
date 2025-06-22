@@ -13,9 +13,12 @@ export interface RetirementData {
 
 export interface AdvancedInvestment {
   id: string;
+  name: string;
   amount: number;
   interestRate: number;
-  timeYears: number;
+  startYear: number; // Years from now when investment starts
+  timeYears: number; // Duration of the investment
+  addAtMaturity: boolean; // true = add full amount at maturity, false = add gradually each year
 }
 
 export interface CalculationResults {

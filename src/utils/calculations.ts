@@ -1,4 +1,4 @@
-import { RetirementData, CalculationResults, MonthlyInvestment, MonthlyWithdrawal } from '../types';
+import { RetirementData, CalculationResults, MonthlyInvestment, MonthlyWithdrawal, AdvancedInvestment } from '../types';
 
 export const formatCurrency = (amount: number): string => {
   const sign = amount < 0 ? '-' : '';
@@ -37,6 +37,42 @@ export const countYearsToDepleteFV = (
     i++;
   }
   return i;
+};
+
+export const calculateAdvancedInvestmentsValue = (
+  advancedInvestments: AdvancedInvestment[],
+  currentAge: number,
+  retirementAge: number
+): number => {
+  if (!advancedInvestments || advancedInvestments.length === 0) {
+    return 0;
+  }
+
+  const yearsToRetirement = retirementAge - currentAge;
+  let totalValue = 0;
+
+  for (const investment of advancedInvestments) {
+    // Skip if investment starts after retirement (startYear is 0-based)
+    if (investment.startYear >= yearsToRetirement) {
+      continue;
+    }
+
+    // Calculate how many years the investment will grow
+    // It grows for its duration OR until retirement, whichever comes first
+    const yearsFromStartToRetirement = yearsToRetirement - investment.startYear;
+    const actualGrowthYears = Math.min(investment.timeYears, yearsFromStartToRetirement);
+    
+    // Calculate the value at retirement
+    if (actualGrowthYears > 0) {
+      const futureValue = investment.amount * Math.pow(1 + investment.interestRate / 100, actualGrowthYears);
+      totalValue += futureValue;
+    } else {
+      // Investment starts exactly at retirement, so only principal is available
+      totalValue += investment.amount;
+    }
+  }
+
+  return totalValue;
 };
 
 export const calculateSIP = (
@@ -79,24 +115,116 @@ export const generateMonthlyInvestments = (
   incrementRate: number,
   startingAge: number,
   inflationRate: number,
-  savingsTillNow: number
+  savingsTillNow: number,
+  advancedInvestments: AdvancedInvestment[] = []
 ): MonthlyInvestment[] => {
   const investments: MonthlyInvestment[] = [];
   let age = startingAge;
-  let maturity = savingsTillNow;
+  let regularCorpus = savingsTillNow; // Track regular investments corpus separately
   let accumulatedValue = sip;
 
-  for (let i = 1; i <= years; i++) {
-    maturity = (maturity + accumulatedValue) * (1 + annualRate / 100);
+  // Track advanced investments by type
+  const maturityInvestments: Array<{
+    id: string;
+    principalAmount: number;
+    interestRate: number;
+    startYear: number;
+    duration: number;
+    maturityYear: number;
+    maturityValue: number;
+  }> = [];
 
-    const inflationAdjustedWithdrawal = accumulatedValue / Math.pow(1 + inflationRate / 100, i - 1);
+  const gradualInvestments: Array<{
+    id: string;
+    principalAmount: number;
+    currentValue: number;
+    interestRate: number;
+    startYear: number;
+    duration: number;
+    isActive: boolean;
+    yearsRemaining: number;
+  }> = [];
+
+  // Categorize investments
+  advancedInvestments.forEach(inv => {
+    if (inv.addAtMaturity) {
+      // Calculate maturity value
+      const maturityValue = inv.amount * Math.pow(1 + inv.interestRate / 100, inv.timeYears);
+      maturityInvestments.push({
+        id: inv.id,
+        principalAmount: inv.amount,
+        interestRate: inv.interestRate,
+        startYear: inv.startYear,
+        duration: inv.timeYears,
+        maturityYear: inv.startYear + inv.timeYears,
+        maturityValue: maturityValue
+      });
+    } else {
+      // Will be added to gradualInvestments when it starts
+    }
+  });
+
+  for (let yearIndex = 0; yearIndex < years; yearIndex++) {
+    const currentYear = yearIndex + 1; // 1-based year for display
+    
+    // Check for new gradual investments starting this year
+    const newGradualInvestments = advancedInvestments.filter(
+      inv => inv.startYear === yearIndex && !inv.addAtMaturity
+    );
+    
+    // Add new gradual investments
+    newGradualInvestments.forEach(inv => {
+      gradualInvestments.push({
+        id: inv.id,
+        principalAmount: inv.amount,
+        currentValue: inv.amount,
+        interestRate: inv.interestRate,
+        startYear: inv.startYear,
+        duration: inv.timeYears,
+        isActive: true,
+        yearsRemaining: inv.timeYears
+      });
+    });
+
+    // Check for maturity investments that mature this year
+    let maturityBonus = 0;
+    maturityInvestments.forEach(inv => {
+      if (inv.maturityYear === yearIndex) {
+        maturityBonus += inv.maturityValue;
+      }
+    });
+
+    // Grow the regular corpus with regular SIP and interest rate
+    regularCorpus = (regularCorpus + accumulatedValue) * (1 + annualRate / 100);
+
+    // Grow each active gradual investment with its own interest rate
+    gradualInvestments.forEach(inv => {
+      if (inv.isActive && inv.yearsRemaining > 0) {
+        // Grow by its own interest rate
+        inv.currentValue = inv.currentValue * (1 + inv.interestRate / 100);
+        inv.yearsRemaining--;
+        
+        // If duration is complete, mark as inactive (but keep the value)
+        if (inv.yearsRemaining <= 0) {
+          inv.isActive = false;
+        }
+      }
+    });
+
+    // Calculate total gradual investments value
+    const totalGradualValue = gradualInvestments.reduce((sum, inv) => sum + inv.currentValue, 0);
+
+    // Total corpus = regular corpus + gradual investments value + maturity bonus
+    const totalCorpus = regularCorpus + totalGradualValue + maturityBonus;
+
+    const inflationAdjustedWithdrawal = accumulatedValue / Math.pow(1 + inflationRate / 100, yearIndex);
 
     investments.push({
       age: age + 1,
       monthlyAmount: accumulatedValue / 12,
       inflationAdjustedAmount: inflationAdjustedWithdrawal / 12,
-      yearEndCorpus: maturity,
-      year: i
+      yearEndCorpus: totalCorpus,
+      year: currentYear
     });
 
     accumulatedValue = accumulatedValue * (1 + incrementRate / 100);
@@ -148,8 +276,8 @@ export const calculateRetirement = (data: RetirementData): CalculationResults =>
     inflationRate,
     interestRate,
     afterRetirementInterestRate,
-    incrementRate
-    // Note: advancedInvestments feature to be implemented in future version
+    incrementRate,
+    advancedInvestments
   } = data;
 
   const yearsForMonthlyInvestment = retirementAge - currentAge;
@@ -191,9 +319,19 @@ export const calculateRetirement = (data: RetirementData): CalculationResults =>
     requiredCorpus = mid!;
   }
 
-  // Calculate required SIP
+  // Calculate advanced investments contribution
+  const advancedInvestmentValue = calculateAdvancedInvestmentsValue(
+    advancedInvestments,
+    currentAge,
+    retirementAge
+  );
+
+  // Adjust required corpus by subtracting advanced investments value
+  const adjustedRequiredCorpus = Math.max(0, requiredCorpus - advancedInvestmentValue);
+
+  // Calculate required SIP with adjusted corpus
   const requiredSIP = calculateSIP(
-    requiredCorpus,
+    adjustedRequiredCorpus,
     interestRate,
     yearsForMonthlyInvestment,
     incrementRate,
@@ -208,7 +346,8 @@ export const calculateRetirement = (data: RetirementData): CalculationResults =>
     incrementRate,
     currentAge,
     inflationRate,
-    savingsTillNow
+    savingsTillNow,
+    advancedInvestments
   );
 
   const monthlyWithdrawals = generateMonthlyWithdrawals(
@@ -221,9 +360,10 @@ export const calculateRetirement = (data: RetirementData): CalculationResults =>
     retirementAge
   );
 
-  // Calculate totals
+  // Calculate totals including advanced investments
   const totalInvestmentNeeded = monthlyInvestments.reduce((sum, inv) => sum + (inv.monthlyAmount * 12), 0);
-  const totalReturns = requiredCorpus - totalInvestmentNeeded - savingsTillNow;
+  const totalAdvancedInvestments = advancedInvestments.reduce((sum, inv) => sum + inv.amount, 0);
+  const totalReturns = requiredCorpus - totalInvestmentNeeded - savingsTillNow - totalAdvancedInvestments;
 
   return {
     requiredCorpus,
@@ -232,4 +372,4 @@ export const calculateRetirement = (data: RetirementData): CalculationResults =>
     totalInvestmentNeeded,
     totalReturns
   };
-}; 
+};
