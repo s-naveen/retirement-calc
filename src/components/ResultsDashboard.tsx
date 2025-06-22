@@ -26,6 +26,10 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, results, onRe
       const element = document.querySelector('.results-dashboard') as HTMLElement;
       if (!element) return;
 
+      // Detect current theme
+      const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+      const currentTheme = isDarkMode ? 'dark' : 'light';
+
       // Temporarily show all data for export
       const originalInvestmentShow = showFullInvestmentSchedule;
       const originalWithdrawalShow = showFullWithdrawalSchedule;
@@ -37,31 +41,148 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, results, onRe
 
       // Create a clone of the element for PDF generation
       const clone = element.cloneNode(true) as HTMLElement;
-      clone.style.width = '1200px';
-      clone.style.padding = '40px';
-      clone.style.backgroundColor = '#ffffff';
-      clone.style.color = '#000000';
-      clone.style.fontFamily = 'Arial, sans-serif';
+      clone.style.width = '1400px';
+      clone.style.padding = '30px';
+      clone.style.fontFamily = '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+      clone.style.fontSize = '14px';
+      clone.style.lineHeight = '1.5';
       
-      // Apply PDF-specific styles
+      // Apply theme-aware PDF styles
+      const backgroundColor = isDarkMode ? '#1f2937' : '#ffffff';
+      const textColor = isDarkMode ? '#f9fafb' : '#111827';
+      const borderColor = isDarkMode ? '#4b5563' : '#e2e8f0';
+      const cardBg = isDarkMode ? '#374151' : '#f8fafc';
+      const headerBg = isDarkMode ? '#4f46e5' : '#4f46e5';
+      
+      clone.style.backgroundColor = backgroundColor;
+      clone.style.color = textColor;
+      
+      // Apply PDF-specific styles with theme support
       const style = document.createElement('style');
       style.textContent = `
-        .pdf-export * {
-          color: #000000 !important;
-          background-color: transparent !important;
-          border-color: #e2e8f0 !important;
+        .pdf-export {
+          font-size: 14px !important;
+          line-height: 1.5 !important;
         }
-        .pdf-export .table-wrapper th {
-          background-color: #f8fafc !important;
-          color: #1f2937 !important;
+        .pdf-export * {
+          color: ${textColor} !important;
+          border-color: ${borderColor} !important;
+        }
+        .pdf-export .dashboard-header {
+          background-color: ${cardBg} !important;
+          border: 1px solid ${borderColor} !important;
+          box-shadow: none !important;
+          margin-bottom: 20px !important;
+          padding: 20px !important;
+        }
+        .pdf-export .dashboard-header h2 {
+          font-size: 24px !important;
+          font-weight: 700 !important;
+          margin: 0 !important;
+        }
+        .pdf-export .back-btn,
+        .pdf-export .export-btn {
+          display: none !important;
         }
         .pdf-export .metric-card {
-          border: 1px solid #e2e8f0 !important;
+          background-color: ${cardBg} !important;
+          border: 1px solid ${borderColor} !important;
           box-shadow: none !important;
+          padding: 16px !important;
+          margin-bottom: 12px !important;
+        }
+        .pdf-export .metric-value {
+          font-size: 18px !important;
+          font-weight: 700 !important;
+        }
+        .pdf-export .metric-content h3 {
+          font-size: 12px !important;
+          text-transform: uppercase !important;
+          opacity: 0.8 !important;
         }
         .pdf-export .chart-container {
-          border: 1px solid #e2e8f0 !important;
+          background-color: ${cardBg} !important;
+          border: 1px solid ${borderColor} !important;
           box-shadow: none !important;
+          padding: 20px !important;
+          margin-bottom: 20px !important;
+          page-break-inside: avoid !important;
+        }
+        .pdf-export .chart-container h3 {
+          font-size: 18px !important;
+          font-weight: 600 !important;
+          margin-bottom: 16px !important;
+        }
+        .pdf-export .table-container {
+          background-color: ${cardBg} !important;
+          border: 1px solid ${borderColor} !important;
+          box-shadow: none !important;
+          padding: 20px !important;
+          margin-bottom: 20px !important;
+          page-break-inside: avoid !important;
+        }
+        .pdf-export .table-container h3 {
+          font-size: 18px !important;
+          font-weight: 600 !important;
+          margin-bottom: 16px !important;
+        }
+        .pdf-export .table-wrapper {
+          border: 1px solid ${borderColor} !important;
+          border-radius: 8px !important;
+          overflow: visible !important;
+        }
+        .pdf-export .table-wrapper table {
+          font-size: 12px !important;
+          min-width: auto !important;
+          width: 100% !important;
+        }
+        .pdf-export .table-wrapper th {
+          background-color: ${headerBg} !important;
+          color: #ffffff !important;
+          padding: 12px 10px !important;
+          font-size: 11px !important;
+          font-weight: 600 !important;
+          text-transform: uppercase !important;
+          letter-spacing: 0.05em !important;
+        }
+        .pdf-export .table-wrapper td {
+          padding: 10px !important;
+          font-size: 11px !important;
+          border-bottom: 1px solid ${borderColor} !important;
+        }
+        .pdf-export .table-wrapper tr:nth-child(even) {
+          background-color: ${isDarkMode ? '#2d3748' : '#f8fafc'} !important;
+        }
+        .pdf-export .toggle-btn {
+          display: none !important;
+        }
+        .pdf-export .table-note {
+          display: none !important;
+        }
+        .pdf-export .metrics-grid {
+          display: grid !important;
+          grid-template-columns: repeat(2, 1fr) !important;
+          gap: 12px !important;
+        }
+        .pdf-export .charts-section {
+          display: grid !important;
+          grid-template-columns: 1fr !important;
+          gap: 16px !important;
+        }
+        .pdf-export .tables-section {
+          display: grid !important;
+          grid-template-columns: 1fr !important;
+          gap: 16px !important;
+        }
+        .pdf-export .recharts-wrapper {
+          font-size: 10px !important;
+        }
+        .pdf-export .recharts-cartesian-axis-tick-value {
+          font-size: 10px !important;
+          fill: ${textColor} !important;
+        }
+        .pdf-export .recharts-legend-item-text {
+          font-size: 10px !important;
         }
       `;
       
@@ -70,21 +191,29 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, results, onRe
       document.body.appendChild(clone);
 
       const canvas = await html2canvas(clone, {
-        scale: 2,
+        scale: 2.5,
         logging: false,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: 1200,
-        windowWidth: 1200,
-        windowHeight: Math.max(clone.scrollHeight, 800)
+        backgroundColor: backgroundColor,
+        width: 1400,
+        windowWidth: 1400,
+        windowHeight: Math.max(clone.scrollHeight, 1000),
+        onclone: (clonedDoc) => {
+          // Ensure all elements are visible
+          const clonedElement = clonedDoc.querySelector('.pdf-export') as HTMLElement;
+          if (clonedElement) {
+            clonedElement.style.transform = 'none';
+            clonedElement.style.overflow = 'visible';
+          }
+        }
       });
 
       // Clean up
       document.body.removeChild(clone);
       document.head.removeChild(style);
 
-      const imgData = canvas.toDataURL('image/png');
+      const imgData = canvas.toDataURL('image/png', 1.0);
       const pdf = new jsPDF('p', 'mm', 'a4');
       
       const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -93,38 +222,49 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, results, onRe
       const imgHeight = canvas.height;
       
       // Calculate dimensions to fit the page with margins
-      const margin = 20;
+      const margin = 15;
       const availableWidth = pdfWidth - (2 * margin);
-      const availableHeight = pdfHeight - (2 * margin);
+      const availableHeight = pdfHeight - (2 * margin + 30); // Extra space for header
       
       const ratio = Math.min(availableWidth / (imgWidth * 0.264583), availableHeight / (imgHeight * 0.264583));
       const scaledWidth = (imgWidth * 0.264583) * ratio;
       const scaledHeight = (imgHeight * 0.264583) * ratio;
       
       const x = (pdfWidth - scaledWidth) / 2;
-      const y = margin;
+      const y = margin + 25;
 
-      // Add title
-      pdf.setFontSize(20);
-      pdf.setTextColor(67, 97, 238);
+      // Add header with theme awareness
+      pdf.setFontSize(22);
+      pdf.setTextColor(79, 70, 229); // Primary color
       pdf.text('Retirement Planning Report', pdfWidth / 2, 15, { align: 'center' });
       
-      // Add timestamp
+      // Add metadata
       pdf.setFontSize(10);
       pdf.setTextColor(107, 114, 128);
-      pdf.text(`Generated on: ${new Date().toLocaleDateString()}`, pdfWidth / 2, 25, { align: 'center' });
+      const currentDate = new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+      pdf.text(`Generated on: ${currentDate} • Theme: ${currentTheme}`, pdfWidth / 2, 22, { align: 'center' });
 
       // Check if content fits on one page
-      if (scaledHeight > availableHeight - 20) {
+      if (scaledHeight > availableHeight) {
         // Multi-page handling
-        const pagesNeeded = Math.ceil(scaledHeight / (availableHeight - 20));
-        const pageHeight = scaledHeight / pagesNeeded;
+        const pagesNeeded = Math.ceil(scaledHeight / availableHeight);
         
         for (let i = 0; i < pagesNeeded; i++) {
-          if (i > 0) pdf.addPage();
+          if (i > 0) {
+            pdf.addPage();
+            // Add page header
+            pdf.setFontSize(16);
+            pdf.setTextColor(79, 70, 229);
+            pdf.text('Retirement Planning Report (continued)', pdfWidth / 2, 15, { align: 'center' });
+          }
           
           const sourceY = i * (imgHeight / pagesNeeded);
-          const sourceHeight = imgHeight / pagesNeeded;
+          const sourceHeight = Math.min(imgHeight / pagesNeeded, imgHeight - sourceY);
+          const targetHeight = Math.min(availableHeight, (sourceHeight * 0.264583) * ratio);
           
           // Create a canvas for this page section
           const pageCanvas = document.createElement('canvas');
@@ -134,15 +274,24 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, results, onRe
           
           if (pageCtx) {
             pageCtx.drawImage(canvas, 0, sourceY, imgWidth, sourceHeight, 0, 0, imgWidth, sourceHeight);
-            const pageImgData = pageCanvas.toDataURL('image/png');
-            pdf.addImage(pageImgData, 'PNG', x, y, scaledWidth, pageHeight);
+            const pageImgData = pageCanvas.toDataURL('image/png', 1.0);
+            pdf.addImage(pageImgData, 'PNG', x, i === 0 ? y : margin + 20, scaledWidth, targetHeight);
           }
         }
       } else {
         pdf.addImage(imgData, 'PNG', x, y, scaledWidth, scaledHeight);
       }
 
-      pdf.save(`retirement-plan-${new Date().toISOString().split('T')[0]}.pdf`);
+      // Add footer
+      const pageCount = pdf.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(8);
+        pdf.setTextColor(107, 114, 128);
+        pdf.text(`Page ${i} of ${pageCount}`, pdfWidth / 2, pdfHeight - 10, { align: 'center' });
+      }
+
+      pdf.save(`retirement-plan-${currentTheme}-${new Date().toISOString().split('T')[0]}.pdf`);
 
       // Restore original state
       setShowFullInvestmentSchedule(originalInvestmentShow);
@@ -410,10 +559,10 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, results, onRe
               <tbody>
                 {(showFullInvestmentSchedule ? results.monthlyInvestments : results.monthlyInvestments.slice(0, 10)).map((investment, index) => (
                   <tr key={index}>
-                    <td>{investment.age}</td>
-                    <td>{formatCurrency(investment.monthlyAmount)}</td>
-                    <td>{formatCurrency(investment.inflationAdjustedAmount)}</td>
-                    <td>{formatCurrency(investment.yearEndCorpus)}</td>
+                    <td data-label="Age">{investment.age}</td>
+                    <td data-label="Monthly Investment">{formatCurrency(investment.monthlyAmount)}</td>
+                    <td data-label="Today's Value">{formatCurrency(investment.inflationAdjustedAmount)}</td>
+                    <td data-label="Year-End Corpus">{formatCurrency(investment.yearEndCorpus)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -455,9 +604,9 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, results, onRe
                 <tbody>
                   {(showFullWithdrawalSchedule ? results.monthlyWithdrawals : results.monthlyWithdrawals.slice(0, 10)).map((withdrawal, index) => (
                     <tr key={index}>
-                      <td>{withdrawal.age}</td>
-                      <td>{formatCurrency(withdrawal.monthlyWithdrawal)}</td>
-                      <td>{formatCurrency(withdrawal.remainingCorpus)}</td>
+                      <td data-label="Age">{withdrawal.age}</td>
+                      <td data-label="Monthly Withdrawal">{formatCurrency(withdrawal.monthlyWithdrawal)}</td>
+                      <td data-label="Remaining Corpus">{formatCurrency(withdrawal.remainingCorpus)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -500,13 +649,13 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, results, onRe
                     if (investment.startYear >= yearsToRetirement) {
                       return (
                         <tr key={investment.id} style={{ opacity: 0.6 }}>
-                          <td>Investment {index + 1}</td>
-                          <td>{formatCurrency(investment.amount)}</td>
-                          <td>{investment.interestRate}%</td>
-                          <td>Year {investment.startYear}</td>
-                          <td>{investment.timeYears} years</td>
-                          <td>0 years (starts after retirement)</td>
-                          <td>{formatCurrency(0)}</td>
+                          <td data-label="Investment">{investment.name || `Investment ${index + 1}`}</td>
+                          <td data-label="Principal">{formatCurrency(investment.amount)}</td>
+                          <td data-label="Rate">{investment.interestRate}%</td>
+                          <td data-label="Start">{investment.startYear === 0 ? 'Immediate' : `Year ${investment.startYear}`}</td>
+                          <td data-label="Duration">{investment.timeYears} years</td>
+                          <td data-label="Growth">0 years (starts after retirement)</td>
+                          <td data-label="Maturity Value">{formatCurrency(0)}</td>
                         </tr>
                       );
                     }
@@ -520,26 +669,26 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, results, onRe
                     
                     return (
                       <tr key={investment.id}>
-                        <td>Investment {index + 1}</td>
-                        <td>{formatCurrency(investment.amount)}</td>
-                        <td>{investment.interestRate}%</td>
-                        <td>Year {investment.startYear}</td>
-                        <td>{investment.timeYears} years</td>
-                        <td>{actualGrowthYears} years</td>
-                        <td>{formatCurrency(maturityValue)}</td>
+                        <td data-label="Investment">{investment.name || `Investment ${index + 1}`}</td>
+                        <td data-label="Principal">{formatCurrency(investment.amount)}</td>
+                        <td data-label="Rate">{investment.interestRate}%</td>
+                        <td data-label="Start">{investment.startYear === 0 ? 'Immediate' : `Year ${investment.startYear}`}</td>
+                        <td data-label="Duration">{investment.timeYears} years</td>
+                        <td data-label="Growth">{actualGrowthYears} years</td>
+                        <td data-label="Maturity Value">{formatCurrency(maturityValue)}</td>
                       </tr>
                     );
                   })}
                 </tbody>
                 <tfoot>
                   <tr style={{ fontWeight: 'bold', borderTop: '2px solid var(--border-color)' }}>
-                    <td>Total</td>
-                    <td>{formatCurrency(totalAdvancedInvestments)}</td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td>{formatCurrency(data.advancedInvestments.reduce((sum, inv) => {
+                    <td data-label="Investment">Total</td>
+                    <td data-label="Principal">{formatCurrency(totalAdvancedInvestments)}</td>
+                    <td data-label="Rate">-</td>
+                    <td data-label="Start">-</td>
+                    <td data-label="Duration">-</td>
+                    <td data-label="Growth">-</td>
+                    <td data-label="Maturity Value">{formatCurrency(data.advancedInvestments.reduce((sum, inv) => {
                       const yearsToRetirement = data.retirementAge - data.currentAge;
                       if (inv.startYear >= yearsToRetirement) return sum;
                       

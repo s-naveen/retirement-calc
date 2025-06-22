@@ -710,82 +710,224 @@
 /* ===== RESPONSIVE DESIGN ===== */
 @media (max-width: 768px) {
   .retirement-form {
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
   }
   
   .section-nav {
-    flex-direction: column;
+    flex-direction: row;
     gap: var(--spacing-xs);
     position: static;
+    overflow-x: auto;
+    padding: var(--spacing-xs);
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .section-nav::-webkit-scrollbar {
+    display: none;
   }
   
   .nav-item {
-    min-height: 50px;
-    padding: var(--spacing-md) var(--spacing-lg);
+    min-height: 48px;
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.85rem;
+    min-width: 120px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .nav-item span {
+    display: none;
   }
   
   .form-section {
-    padding: var(--spacing-xl);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
   }
   
   .form-section h3 {
-    font-size: 1.5rem;
-    flex-direction: column;
-    text-align: center;
-    gap: var(--spacing-md);
+    font-size: 1.25rem;
+    flex-direction: row;
+    text-align: left;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
   }
   
   .form-grid {
     grid-template-columns: 1fr;
-    gap: var(--spacing-xl);
+    gap: var(--spacing-lg);
   }
   
   .form-row {
     grid-template-columns: 1fr;
-    gap: var(--spacing-lg);
+    gap: var(--spacing-md);
+  }
+
+  .investment-card {
+    padding: var(--spacing-lg);
+    position: relative;
+  }
+
+  .investment-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-md);
+  }
+
+  .investment-title {
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .remove-btn {
+    position: absolute;
+    top: var(--spacing-sm);
+    right: var(--spacing-sm);
+    z-index: 2;
+  }
+
+  .investment-type-section {
+    margin-top: var(--spacing-md);
+  }
+
+  .toggle-label {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+
+  .toggle-content {
+    margin-left: 0;
+    width: 100%;
   }
   
   .investment-preview {
+    display: flex;
     flex-direction: column;
-    gap: var(--spacing-lg);
+    gap: var(--spacing-sm);
   }
   
   .section-title h3 {
-    font-size: 1.75rem;
+    font-size: 1.25rem;
   }
   
   .calculate-btn {
-    font-size: 1.1rem;
+    font-size: 1rem;
     padding: var(--spacing-lg) var(--spacing-xl);
-    min-height: 60px;
+    min-height: 56px;
+    position: sticky;
+    bottom: var(--spacing-lg);
+    margin-top: var(--spacing-xl);
+    box-shadow: 0 -4px 20px rgba(var(--primary-rgb), 0.3);
+  }
+
+  .input-wrapper {
+    width: 100%;
+  }
+
+  .form-group label {
+    font-size: 0.95rem;
   }
 }
 
 @media (max-width: 480px) {
   .retirement-form {
-    padding: var(--spacing-md);
+    padding: var(--spacing-sm);
   }
   
   .form-section {
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .form-section h3 {
+    font-size: 1.1rem;
+    margin-bottom: var(--spacing-md);
+  }
+
+  .section-nav {
+    margin-bottom: var(--spacing-md);
+  }
+
+  .nav-item {
+    min-width: 100px;
+    font-size: 0.8rem;
+    padding: var(--spacing-xs) var(--spacing-sm);
   }
   
   .investment-card {
-    padding: var(--spacing-xl);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
   }
   
   .investment-header {
     flex-direction: column;
-    gap: var(--spacing-lg);
+    gap: var(--spacing-sm);
     align-items: flex-start;
   }
   
   .investment-title {
     width: 100%;
   }
+
+  .investment-badge {
+    font-size: 0.75rem;
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .investment-name-input {
+    font-size: 0.9rem;
+  }
   
   .remove-btn {
-    align-self: flex-end;
+    position: absolute;
+    top: var(--spacing-xs);
+    right: var(--spacing-xs);
+    padding: var(--spacing-xs);
+  }
+
+  .form-group label {
+    font-size: 0.9rem;
+  }
+
+  .input-wrapper input {
+    font-size: 0.9rem;
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .input-suffix {
+    font-size: 0.8rem;
+  }
+
+  .tooltip {
+    width: 14px;
+    height: 14px;
+  }
+
+  .toggle-title {
+    font-size: 0.9rem;
+  }
+
+  .toggle-description {
+    font-size: 0.8rem;
+  }
+
+  .preview-label,
+  .preview-value {
+    font-size: 0.85rem;
+  }
+
+  .calculate-btn {
+    font-size: 0.95rem;
+    padding: var(--spacing-md) var(--spacing-lg);
+    min-height: 52px;
+  }
+
+  .add-investment-btn {
+    font-size: 0.9rem;
+    padding: var(--spacing-lg) var(--spacing-xl);
+    min-height: 50px;
   }
 }
 
